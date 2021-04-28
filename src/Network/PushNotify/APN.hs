@@ -108,6 +108,7 @@ data ApnConnectionInfo = ApnConnectionInfo
     , aciHostname             :: !Text
     , aciMaxConcurrentStreams :: !Int
     , aciTopic                :: !ByteString }
+    deriving (Show, Eq)
 
 -- | A connection to an APN API server
 data ApnConnection = ApnConnection
@@ -119,6 +120,7 @@ data ApnConnection = ApnConnection
 
 -- | An APN token used to uniquely identify a device
 newtype ApnToken = ApnToken { unApnToken :: ByteString }
+  deriving (Show, Eq)
 
 class SpecifyError a where
     isAnError :: IOError -> a
@@ -169,7 +171,7 @@ data JsonApsAlert = JsonApsAlert
     -- ^ A short string describing the purpose of the notification.
     , jaaBody  :: !Text
     -- ^ The text of the alert message.
-    } deriving (Generic, Show)
+    } deriving (Generic, Show, Eq)
 
 instance ToJSON JsonApsAlert where
     toJSON = genericToJSON $ aesonOptions 3
@@ -192,7 +194,7 @@ data JsonApsMessage
     -- in the Library/Sounds directory of the app.
     , jamCategory :: !(Maybe Text)
     -- ^ The category of the notification. Must be registered by the app beforehand.
-    } deriving (Generic, Show)
+    } deriving (Generic, Show, Eq)
 
 -- | Create an empty apn message
 emptyMessage :: JsonApsMessage
@@ -322,7 +324,7 @@ data JsonAps
     -- ^ Extra information to be used by the receiving app
     , jaSupplementalFields :: !(Map Text Value)
     -- ^ Additional fields to be used by the receiving app
-    } deriving (Generic, Show)
+    } deriving (Generic, Show, Eq)
 
 instance ToJSON JsonAps where
     toJSON JsonAps{..} = object (staticFields <> dynamicFields)
