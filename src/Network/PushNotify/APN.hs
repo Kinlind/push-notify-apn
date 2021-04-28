@@ -471,15 +471,13 @@ newConnection aci = do
         shared      = def { sharedCredentials = credentials
                           , sharedCAStore=castore }
         maxConcurrentStreams = aciMaxConcurrentStreams aci
-        clip = ClientParams
+        clip = (defaultParamsClient (T.unpack hostname) "aps")
             { clientUseMaxFragmentLength=Nothing
-            , clientServerIdentification=(T.unpack hostname, undefined)
             , clientUseServerNameIndication=True
             , clientWantSessionResume=Nothing
             , clientShared=shared
             , clientHooks=def
                 { onCertificateRequest=const . return . Just $ credential }
-            , clientDebug=DebugParams { debugSeed=Nothing, debugPrintSeed=const $ return () }
             , clientSupported=def
                 { supportedVersions=[ TLS12 ]
                 , supportedCiphers=ciphersuite_strong }
