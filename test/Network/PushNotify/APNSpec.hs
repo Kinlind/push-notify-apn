@@ -13,9 +13,6 @@ spec = do
       it "encodes an APNS message with a title and body" $
         toJSON (alertMessage "hello" "world") `shouldBe`
           object [
-            "category" .= Null,
-            "sound"    .= Null,
-            "badge"    .= Null,
             "alert"    .= object [
               "title" .= String "hello",
               "body"  .= String "world"
@@ -24,9 +21,6 @@ spec = do
       it "encodes an APNS message with a title and no body" $
         toJSON (bodyMessage "hello world") `shouldBe`
           object [
-            "category" .= Null,
-            "sound"    .= Null,
-            "badge"    .= Null,
             "alert"    .= object [ "body"  .= String "hello world" ]
           ]
 

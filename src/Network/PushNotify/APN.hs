@@ -37,14 +37,14 @@ module Network.PushNotify.APN
     , addSupplementalField
     , closeSession
     , isOpen
-    , ApnSession
-    , JsonAps
-    , JsonApsAlert
-    , JsonApsMessage
+    , ApnSession(..)
+    , JsonAps(..)
+    , JsonApsAlert(..)
+    , JsonApsMessage(..)
     , ApnMessageResult(..)
     , ApnFatalError(..)
     , ApnTemporaryError(..)
-    , ApnToken
+    , ApnToken(..)
     ) where
 
 import           Control.Concurrent
@@ -87,6 +87,7 @@ import qualified Data.ByteString.Base16               as B16
 import qualified Data.ByteString.Lazy                 as L
 import qualified Data.List                            as DL
 import qualified Data.Map.Strict                      as M
+import qualified Data.HashMap.Strict                  as H
 import qualified Data.Text                            as T
 import qualified Data.Text.Encoding                   as TE
 
@@ -156,6 +157,12 @@ data ApnMessageResult = ApnMessageResultOk
                       | ApnMessageResultClientError ClientError
     deriving (Eq, Show)
 
+aesonOptions :: Int -> Options
+aesonOptions dropCount = defaultOptions
+  { fieldLabelModifier = drop dropCount . map toLower
+  , omitNothingFields  = True
+  }
+
 -- | The specification of a push notification's message body
 data JsonApsAlert = JsonApsAlert
     { jaaTitle :: !(Maybe Text)
@@ -165,10 +172,11 @@ data JsonApsAlert = JsonApsAlert
     } deriving (Generic, Show)
 
 instance ToJSON JsonApsAlert where
-    toJSON     = genericToJSON     defaultOptions
-        { fieldLabelModifier = drop 3 . map toLower
-        , omitNothingFields  = True
-        }
+    toJSON = genericToJSON $ aesonOptions 3
+    toEncoding = genericToEncoding $ aesonOptions 3
+
+instance FromJSON JsonApsAlert where
+  parseJSON = genericParseJSON $ aesonOptions 3
 
 -- | Push notification message's content
 data JsonApsMessage
@@ -299,8 +307,10 @@ clearAlertMessage
 clearAlertMessage a = a { jamAlert = Nothing }
 
 instance ToJSON JsonApsMessage where
-    toJSON     = genericToJSON     defaultOptions
-        { fieldLabelModifier = drop 3 . map toLower }
+    toJSON     = genericToJSON  $ aesonOptions 3
+
+instance FromJSON JsonApsMessage where
+  parseJSON = genericParseJSON $ aesonOptions 3
 
 -- | A push notification message
 data JsonAps
@@ -321,6 +331,17 @@ instance ToJSON JsonAps where
             staticFields = [ "aps" .= jaAps
                            , "appspecificcontent" .= jaAppSpecificContent
                            ]
+
+instance FromJSON JsonAps where
+  parseJSON = withObject "From JsonAps" $ \o -> do
+    jaAps <- o .: "aps"
+    jaAppSpecificContent <- o .: "appspecificcontent"
+    let jaSupplementalFields
+          = M.fromList
+          $ filter (\(x, _) -> x /= "aps" && x /= "appspecificcontent")
+          $ H.toList o
+    pure JsonAps {..}
+
 
 -- | Prepare a new apn message consisting of a
 -- standard message without a custom payload
