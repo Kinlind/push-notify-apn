@@ -411,8 +411,6 @@ newSession certKey certPath caPath dev maxparallel maxConnectionCount topic = do
             then "api.development.push.apple.com"
             else "api.push.apple.com"
         connInfo = ApnConnectionInfo certPath certKey caPath hostname maxparallel topic
-    certsOk <- checkCertificates connInfo
-    unless certsOk $ error "Unable to load certificates and/or the private key"
     isOpen <- newIORef True
 
     let connectionUnusedTimeout :: NominalDiffTime
@@ -458,12 +456,6 @@ withConnection s action = do
               -- Throwing an exception is the way we inform the resource pool.
               throw clientError
           Right res -> return res
-
-checkCertificates :: ApnConnectionInfo -> IO Bool
-checkCertificates aci = do
-    castore <- readCertificateStore $ aciCaPath aci
-    credential <- credentialLoadX509 (aciCertPath aci) (aciCertKey aci)
-    return $ isJust castore && isRight credential
 
 newConnection :: ApnConnectionInfo -> IO ApnConnection
 newConnection aci = do
