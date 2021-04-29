@@ -465,7 +465,15 @@ newConnection aci = do
     let certPath = aciCertPath aci
         privateKeyPath = aciCertKey aci
 
-    credential <- either (throwIO . userError) pure
+    credential <- either
+      (\x -> throwIO . userError
+          $ "could not load either "
+          <> show  certPath
+          <> " or "
+          <> show privateKeyPath
+          <> " with error "
+          <> x
+      ) pure
       =<< credentialLoadX509 certPath privateKeyPath
     let credentials = Credentials [credential]
         shared      = def { sharedCredentials = credentials
