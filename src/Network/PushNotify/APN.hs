@@ -459,8 +459,14 @@ withConnection s action = do
 
 newConnection :: ApnConnectionInfo -> IO ApnConnection
 newConnection aci = do
-    Just castore <- readCertificateStore $ aciCaPath aci
-    Right credential <- credentialLoadX509 (aciCertPath aci) (aciCertKey aci)
+    let caPath = aciCaPath aci
+    castore <- maybe (throwIO $ userError $ "Failed to read certificate store with path " <> show caPath) pure
+      =<< readCertificateStore caPath
+    let certPath = aciCertPath aci
+        privateKeyPath = aciCertKey aci
+
+    credential <- either (throwIO . userError) pure
+      =<< credentialLoadX509 certPath privateKeyPath
     let credentials = Credentials [credential]
         shared      = def { sharedCredentials = credentials
                           , sharedCAStore=castore }
