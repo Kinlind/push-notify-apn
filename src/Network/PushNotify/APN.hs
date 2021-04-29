@@ -16,6 +16,7 @@
 module Network.PushNotify.APN
     ( newSession
     , newMessage
+    , newSilentMessage
     , newMessageWithCustomPayload
     , hexEncodedToken
     , rawToken
@@ -318,7 +319,7 @@ instance FromJSON JsonApsMessage where
 data JsonAps
     -- | A push notification message
     = JsonAps
-    { jaAps                :: !JsonApsMessage
+    { jaAps                :: !(Maybe JsonApsMessage)
     -- ^ The main content of the message
     , jaAppSpecificContent :: !(Maybe Text)
     -- ^ Extra information to be used by the receiving app
@@ -330,7 +331,7 @@ instance ToJSON JsonAps where
     toJSON JsonAps{..} = object (staticFields <> dynamicFields)
         where
             dynamicFields = M.toList jaSupplementalFields
-            staticFields = [ "aps" .= jaAps
+            staticFields = [ "aps" .= maybe (object ["content-available" .= (1 :: Int)]) toJSON jaAps
                            , "appspecificcontent" .= jaAppSpecificContent
                            ]
 
@@ -352,7 +353,10 @@ newMessage
     -- ^ The standard message to include
     -> JsonAps
     -- ^ The resulting APN message
-newMessage aps = JsonAps aps Nothing M.empty
+newMessage aps = JsonAps (Just aps) Nothing M.empty
+
+newSilentMessage :: JsonAps
+newSilentMessage = JsonAps Nothing Nothing M.empty
 
 -- | Prepare a new apn message consisting of a
 -- standard message and a custom payload
@@ -364,7 +368,7 @@ newMessageWithCustomPayload
     -> JsonAps
     -- ^ The resulting APN message
 newMessageWithCustomPayload message payload =
-    JsonAps message (Just payload) M.empty
+    JsonAps (Just message) (Just payload) M.empty
 
 -- | Add a supplemental field to be sent over with the notification
 --
